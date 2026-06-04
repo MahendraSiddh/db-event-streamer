@@ -1,0 +1,16 @@
+{
+  "name": "api-ws-server",
+  "version": "1.0.0",
+  "description": "REST API and WebSocket Server for real-time orders",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.11.5",
+    "redis": "^4.6.13",
+    "ws": "^8.16.0"
+  }
+}

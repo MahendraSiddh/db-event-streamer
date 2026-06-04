@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: order_db
+    environment:
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pgpassword
+      POSTGRES_DB: order_stream
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data
+    command: ["postgres", "-c", "wal_level=logical", "-c", "max_slot_wal_keep_size=1024MB"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pguser -d order_stream"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: order_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-listener:
+    build:
+      context: ./db-listener
+    container_name: db_listener
+    environment:
+      DATABASE_URL: postgres://pguser:pgpassword@db:5432/order_stream
+      REDIS_URL: redis://redis:6379
+      REDIS_STREAM_KEY: orders:stream
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    restart: always
+
+  api-ws-server:
+    build:
+      context: ./api-ws-server
+    container_name: api_ws_server
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://pguser:pgpassword@db:5432/order_stream
+      REDIS_URL: redis://redis:6379
+      REDIS_STREAM_KEY: orders:stream
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: always
+
+volumes:
+  pgdata:

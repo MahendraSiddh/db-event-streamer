@@ -1,0 +1,15 @@
+{
+  "name": "db-listener",
+  "version": "1.0.0",
+  "description": "Postgres LISTEN to Redis Pub/Sub bridge",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pg": "^8.11.5",
+    "pg-logical-replication": "^2.5.0",
+    "redis": "^4.6.13"
+  }
+}
